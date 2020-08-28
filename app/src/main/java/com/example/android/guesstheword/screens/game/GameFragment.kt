@@ -53,25 +53,19 @@ class GameFragment : Fragment() {
         Log.i("GameFragment : ", "Called ViewModelProviders.of() !")
         viewModel = ViewModelProviders.of(this).get(GameViewModel::class.java)
 
+        //Passes the reference of the created viewModel to View's Data Binding instance
+        //Allows Data Binding to access data from viewModel
         binding.gameViewModel = viewModel
 
-        viewModel.word.observe(this, Observer { newWord ->
-            binding.wordText.text = newWord
-        })
-
-        viewModel.score.observe(this, Observer { newScore ->
-            binding.scoreText.text = newScore.toString()
-        })
+        //Allows to View to stay in sync with the Live Data
+        //Make Data Binding Lifecycle aware
+        binding.lifecycleOwner = this
 
         viewModel.eventGameFinish.observe(this, Observer { hasFinished ->
             if (hasFinished) {
                 gameFinished()
                 viewModel.onGameFinishEventComplete()
             }
-        })
-
-        viewModel.timerText.observe(this, Observer { timeText ->
-            binding.timerText.text = timeText
         })
 
         return binding.root
