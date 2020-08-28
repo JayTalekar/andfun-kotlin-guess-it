@@ -7,11 +7,31 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 
+//For Buzzing Feature
+private val CORRECT_BUZZ_PATTERN = longArrayOf(100, 100, 100, 100, 100, 100)
+private val PANIC_BUZZ_PATTERN = longArrayOf(0, 200)
+private val GAME_OVER_BUZZ_PATTERN = longArrayOf(0, 2000)
+private val NO_BUZZ_PATTERN = longArrayOf(0)
+
+
 class GameViewModel : ViewModel() {
+
+    // These are the three different types of buzzing in the game. Buzz pattern is the number of
+    // milliseconds each interval of buzzing and non-buzzing takes.
+    enum class BuzzType(val pattern: LongArray) {
+        CORRECT(CORRECT_BUZZ_PATTERN),
+        GAME_OVER(GAME_OVER_BUZZ_PATTERN),
+        COUNTDOWN_PANIC(PANIC_BUZZ_PATTERN),
+        NO_BUZZ(NO_BUZZ_PATTERN)
+    }
+
     companion object {
         // These represent different important times
         // This is when the game is over
         const val DONE = 0L
+
+        //This is time after when it will buzz for one second
+        private const val COUNTDOWN_PANIC_SECONDS = 10L
 
         // This is the number of milliseconds in a second
         const val ONE_SECOND = 1000L
@@ -40,6 +60,10 @@ class GameViewModel : ViewModel() {
     val score: LiveData<Int>
         get() = _score
 
+    private val _eventBuzz = MutableLiveData<BuzzType>()
+    val eventBuzz: LiveData<BuzzType>
+        get() = _eventBuzz
+
     // The list of words - the front of the list is the next word to guess
     private lateinit var wordList: MutableList<String>
 
@@ -57,10 +81,14 @@ class GameViewModel : ViewModel() {
             override fun onTick(millisUntilFinished: Long) {
                 val secondsUntilFinished = millisUntilFinished / ONE_SECOND
                 _timerText.value = "Time Remaining : " + DateUtils.formatElapsedTime(secondsUntilFinished)
+                if (secondsUntilFinished <= COUNTDOWN_PANIC_SECONDS) {
+                    _eventBuzz.value = BuzzType.COUNTDOWN_PANIC
+                }
             }
 
             override fun onFinish() {
                 _timerText.value = "Time Up!"
+                _eventBuzz.value = BuzzType.GAME_OVER
                 nextWord()
             }
         }
@@ -128,14 +156,20 @@ class GameViewModel : ViewModel() {
     fun onSkip() {
         _score.value = _score.value?.minus(1)
         nextWord()
+        _eventBuzz.value = BuzzType.NO_BUZZ
     }
 
     fun onCorrect() {
         _score.value = _score.value?.plus(1)
         nextWord()
+        _eventBuzz.value = BuzzType.CORRECT
     }
 
     fun onGameFinishEventComplete() {
         _eventGameFinish.value = false
+    }
+
+    fun onBuzzComplete() {
+        _eventBuzz.value = BuzzType.NO_BUZZ
     }
 }

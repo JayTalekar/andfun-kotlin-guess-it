@@ -40,6 +40,12 @@ android {
     dataBinding {
         enabled = true
     }
+
+    //Added due to error while compiling for Buzzer feature
+    //To change compile sdk version from 1.6 to 1.8
+    kotlinOptions{
+        jvmTarget= JavaVersion.VERSION_1_8.toString()
+    }
 }
 
 dependencies {
